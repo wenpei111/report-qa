@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>一页结论 · 财报问答知识库（作业A）</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Microsoft YaHei", sans-serif; color: #24292f; font-size: 11.5px;
+         line-height: 1.55; max-width: 186mm; margin: 0 auto; padding: 10px; }
+  h1 { font-size: 19px; border-bottom: 3px solid #1a66cc; padding-bottom: 6px; margin-bottom: 4px; }
+  .sub { color: #57606a; font-size: 11px; margin-bottom: 10px; }
+  h2 { font-size: 13.5px; color: #1a66cc; margin: 12px 0 5px; border-left: 4px solid #1a66cc; padding-left: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 10.5px; }
+  th, td { border: 1px solid #d0d7de; padding: 3px 6px; text-align: left; }
+  th { background: #eaf1fb; }
+  .ok { color: #1a7f37; font-weight: bold; }
+  .bad { color: #cf222e; font-weight: bold; }
+  .box { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 8px 12px; margin: 6px 0; }
+  .final { background: #eaf1fb; border: 1px solid #1a66cc; border-radius: 6px; padding: 10px 12px; margin-top: 10px; font-size: 12px; }
+  .final b { color: #1a66cc; }
+  code { background: #f6f8fa; padding: 0 3px; border-radius: 3px; font-size: 10.5px; }
+  ul { padding-left: 18px; }
+  li { margin: 2px 0; }
+</style>
+</head>
+<body>
+<h1>财报问答知识库 · 一页结论（第三课作业 3 · 方向 A）</h1>
+<div class="sub">同一批财报：10 家白酒公司 2026 半年报 · 3,321 块（表格按行列还原，块带公司/章节/页码） · 向量 + BM25 双路检索 · DeepSeek 生成 · 每句答案带 [F0xxxx] 角标可点回原文块</div>
+
+<h2>做法（四步流水线，代码见仓库）</h2>
+<div class="box">
+<b>① 下载</b>：巨潮资讯 10 份半年报全文（下载脚本可复现）；　<b>② 解析</b>：pdfplumber 提取，表格区域剔除后提文字、表格按行列还原，切块带三元数据；　<b>③ 索引</b>：BM25（纯 Python 二字元，本地）+ 向量（阿里云 text-embedding-v3 / 1024 维，云端）双路；　<b>④ 问答</b>：双路加权合并（0.6 向量 + 0.4 BM25）取 top-8，点名公司强制"内部混合"保底 3 块，生成时强制角标引用。
+</div>
+
+<h2>评测：10 道题逐题记录（9 对 1 翻车）</h2>
+<table>
+<tr><th>题号</th><th>类型</th><th>问题</th><th>判定</th><th>翻车原因 / 说明</th></tr>
+<tr><td>Q1</td><td>单公司</td><td>茅台营业收入</td><td class="ok">✓ 90,703,260,964.48 元</td><td>正中主要会计数据表</td></tr>
+<tr><td>Q2</td><td>单公司</td><td>五粮液归母净利润</td><td class="ok">✓ 8,752,942,991.31 元</td><td>多个原文块交叉一致</td></tr>
+<tr><td>Q3</td><td>单公司</td><td>泸州老窖营收+同比</td><td class="ok">✓ 104.7 亿 / -36.35%</td><td>数值与变化率都对</td></tr>
+<tr><td>Q4</td><td>单公司</td><td>茅台直销渠道收入</td><td class="ok">✓ 520.07 亿元</td><td>正中按渠道收入分解表</td></tr>
+<tr><td>Q5</td><td>单公司</td><td>汾酒营业收入</td><td class="ok">✓ 210.44 亿元</td><td>简称"汾酒"也能路由</td></tr>
+<tr><td>Q6</td><td>单公司</td><td>洋河营业收入</td><td class="ok">✓ 105.40 亿元</td><td>—</td></tr>
+<tr><td>Q7</td><td>单公司</td><td>迎驾稀释每股收益</td><td class="ok">✓ 1.45 元/股</td><td>主要财务指标表</td></tr>
+<tr><td>Q8</td><td>跨公司</td><td>五粮液 vs 泸州老窖谁高</td><td class="ok">✓ 284 亿 &gt; 104.7 亿</td><td>两家关键表都进窗口</td></tr>
+<tr><td>Q9</td><td>跨公司</td><td>茅台/五粮液/汾酒排序</td><td class="ok">✓ 907 &gt; 284 &gt; 210 亿</td><td>三家保底机制生效</td></tr>
+<tr><td>Q10</td><td>全景</td><td>10 家谁营收最高</td><td class="bad">✗ 翻车</td><td>见下</td></tr>
+</table>
+
+<h2>哪类题答得好、哪类翻车、为什么</h2>
+<ul>
+<li><b>答得好：单公司事实查找与 2~3 家比较</b>——问题点名公司后走"公司内部混合检索"，直接命中主要会计数据表 / 渠道分解表；数值与原文逐位一致，且都带可回溯的块编号。</li>
+<li><b>翻车：10 家全景统计（Q10）</b>——召回窗口只有 8 块，10 家公司装不下，实际只进了 5 家，茅台的关键块根本没机会进上下文，模型只能答"材料未覆盖"。<b>这不是生成的问题，是检索的结构性上限</b>：一道题要"看过"全部 10 家才可能答对。修复方向：先把全景题拆成 10 个子问题分别检索（课件第 93 页演示的路由/逐项取证思路），或扩大 top-k 分轮取证。</li>
+<li><b>过程中修掉的三个坑</b>：页眉"XX公司2026年半年度报告全文"混进正文污染 BM25；块重建后向量文件错位（必须全量重嵌）；跨公司题一家公司垄断召回窗口。</li>
+</ul>
+
+<h2>同一批财报：什么问题该建库、什么问题该微调</h2>
+<div class="final">
+<b>该建库的</b>：一切"数字要精确、来源要可查、随报告期更新"的问题——营收、渠道、经销商、每股收益、比较排序。
+知识库给的是<b>原文块 + 页码 + 角标</b>，答案错了一个数都能查出来；报告期一换，重建索引即可，模型不用动。<br>
+<b>该微调的</b>："口径和文风固定、不依赖单期数字"的任务——比如让小模型学会董秘答投资者问的措辞套路。
+微调改变的是<b>风格与行为</b>，记不住精确数字，硬问数字必然编造（幻觉）；真要数字还得外挂数据源。<br>
+<b>一句话</b>：事实查询 → 建库；风格与行为 → 微调；两者叠加（董秘口径 + 实时数据）才是完整形态——这也正是方向 B 四格对照实验想验证的事。
+</div>
+</body>
+</html>
